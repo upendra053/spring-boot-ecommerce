@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-boot-ecommerce
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: spring-boot-ecommerce
+  template:
+    metadata:
+      labels:
+        app: spring-boot-ecommerce
+    spec:
+      containers:
+      - name: spring-boot-ecommerce
+        image: kiranreddy444/spring-boot-ecommerce:latest  
+        ports:
+        - containerPort: 9091
