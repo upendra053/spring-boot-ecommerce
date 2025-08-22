@@ -1,0 +1,55 @@
+name: CI & CD Docker with Minicube
+
+on:
+  workflow_dispatch:
+
+env:
+  DOCKER_USERNAME: ${{ vars.DOCKER_NAME }}
+  DOCKER_PASSWORD: ${{ secrets.NEW_DOCKER_PASSWORD }}
+  DOCKER_IMAGE: upendra053/spring-boot-ecommerce
+
+jobs:
+  build-using-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Docker Login
+        run: echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+
+      - name: Docker Build
+        run: |
+          docker build -t $DOCKER_IMAGE:${{ github.sha }} .
+          docker tag $DOCKER_IMAGE:${{ github.sha }} $DOCKER_IMAGE:latest
+      - name: Run Docker
+        run: docker run -d --name ecommerce-app -p 9091:9091 $DOCKER_IMAGE:latest
+
+      - name: Push Docker Image
+        run: |
+          docker push $DOCKER_IMAGE:${{ github.sha }}
+          docker push $DOCKER_IMAGE:latest
+      - name: Setup Kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+      - name: setup Minikube
+        run: |
+         minikube start
+         kubectl config use-context minikube
+      # - name: Setup KinD
+      #   uses: helm/kind-action@v1.7.0
+      
+      # - name: Create Namespace
+      #   run: kubectl create namespace kiran
+
+      # - name: Set Namespace Context
+      #   run: kubectl config set-context --current --namespace=kiran
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f deployment.yml 
+          kubectl apply -f service.yml 
+      
+      # - name: Get pod details under kiran name space
+      #   run: kubectl get pods -n kiran -o wide
